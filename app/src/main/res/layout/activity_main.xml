@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Game View will be managed by GameActivity -->
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="20dp"
+        android:padding="10dp"
+        android:background="#80000000">
+
+        <TextView
+            android:id="@+id/levelText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Level: 1"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/attemptsText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Attempts: 10"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/restartButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="30dp"
+        android:text="إعادة البدء"
+        android:visibility="gone" />
+
+</FrameLayout>
