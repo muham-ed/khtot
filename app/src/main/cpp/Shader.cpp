@@ -55,7 +55,6 @@ Shader *Shader::loadShader(
                     modelMatrixUniformName.c_str());
 
             if (positionAttribute != -1
-                && uvAttribute != -1
                 && projectionMatrixUniform != -1
                 && modelMatrixUniform != -1) {
 

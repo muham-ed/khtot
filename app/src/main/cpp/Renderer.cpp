@@ -4,38 +4,34 @@
 #include <GLES3/gl3.h>
 #include <memory>
 #include <vector>
-#include <android/imagedecoder.h>
 #include <chrono>
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 #include "AndroidOut.h"
 #include "Shader.h"
 #include "Utility.h"
-#include "TextureAsset.h"
 
-#define CORNFLOWER_BLUE 30 / 255.f, 30 / 255.f, 40 / 255.f, 1
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+// لون الخلفية (داكن جداً للفخامة)
+#define DARK_BACKGROUND 18 / 255.f, 18 / 255.f, 24 / 255.f, 1
 
 static const char *vertex = R"vertex(#version 300 es
 in vec3 inPosition;
-in vec2 inUV;
-out vec2 fragUV;
 uniform mat4 uProjection;
 uniform mat4 uModel;
 void main() {
-    fragUV = inUV;
     gl_Position = uProjection * uModel * vec4(inPosition, 1.0);
 }
 )vertex";
 
 static const char *fragment = R"fragment(#version 300 es
 precision mediump float;
-in vec2 fragUV;
-uniform sampler2D uTexture;
 out vec4 outColor;
+uniform vec4 uColor;
 void main() {
-    outColor = texture(uTexture, fragUV);
+    outColor = uColor;
 }
 )fragment";
 
@@ -86,12 +82,12 @@ void Renderer::render() {
     if (!models_.empty()) {
         float modelMatrix[16];
         float cellSize = 0.6f;
-        float gridOffsetX = (game_.getArrows()[0].x + (float)game_.getLevel()/10.0f > 0 ? 4 : 4) * cellSize / 2.0f; // Dynamic adjustment placeholder
-        // Re-calculate grid offsets based on current game grid size
         int currentGridWidth = 3 + (game_.getLevel() / 5);
         if (currentGridWidth > 6) currentGridWidth = 6;
-        gridOffsetX = (currentGridWidth * cellSize) / 2.0f - (cellSize / 2.0f);
+        float gridOffsetX = (currentGridWidth * cellSize) / 2.0f - (cellSize / 2.0f);
         float gridOffsetY = (currentGridWidth * cellSize) / 2.0f - (cellSize / 2.0f);
+
+        GLint colorLoc = glGetUniformLocation(shader_->getProgram(), "uColor");
 
         for (const auto &arrow : game_.getArrows()) {
             if (arrow.gone) continue;
@@ -105,8 +101,11 @@ void Renderer::render() {
             float worldX = (arrow.currentX * cellSize) - gridOffsetX;
             float worldY = (arrow.currentY * cellSize) - gridOffsetY;
 
-            Utility::buildTransformMatrix(modelMatrix, worldX, worldY, angle, 0.35f);
+            Utility::buildTransformMatrix(modelMatrix, worldX, worldY, angle, 0.4f);
             shader_->setModelMatrix(modelMatrix);
+
+            // لون السهم (أبيض مائل للزرقة)
+            glUniform4f(colorLoc, 0.9f, 0.95f, 1.0f, 1.0f);
             shader_->drawModel(models_[0]);
         }
     }
@@ -138,8 +137,8 @@ void Renderer::initRenderer() {
             [&display](const EGLConfig &config) {
                 EGLint red, green, blue, depth;
                 if (eglGetConfigAttrib(display, config, EGL_RED_SIZE, &red)
-                    && eglGetConfigAttrib(display, config, EGL_GREEN_SIZE, &green)
                     && eglGetConfigAttrib(display, config, EGL_BLUE_SIZE, &blue)
+                    && eglGetConfigAttrib(display, config, EGL_GREEN_SIZE, &green)
                     && eglGetConfigAttrib(display, config, EGL_DEPTH_SIZE, &depth)) {
                     return red == 8 && green == 8 && blue == 8 && depth == 24;
                 }
@@ -150,9 +149,7 @@ void Renderer::initRenderer() {
     EGLint contextAttribs[] = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE};
     EGLContext context = eglCreateContext(display, config, nullptr, contextAttribs);
 
-    auto madeCurrent = eglMakeCurrent(display, surface, surface, context);
-    assert(madeCurrent);
-
+    eglMakeCurrent(display, surface, surface, context);
     display_ = display;
     surface_ = surface;
     context_ = context;
@@ -161,11 +158,11 @@ void Renderer::initRenderer() {
     height_ = -1;
 
     shader_ = std::unique_ptr<Shader>(
-            Shader::loadShader(vertex, fragment, "inPosition", "inUV", "uProjection", "uModel"));
+            Shader::loadShader(vertex, fragment, "inPosition", "", "uProjection", "uModel"));
     assert(shader_);
     shader_->activate();
 
-    glClearColor(CORNFLOWER_BLUE);
+    glClearColor(DARK_BACKGROUND);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -186,31 +183,24 @@ void Renderer::updateRenderArea() {
 }
 
 void Renderer::createModels() {
-    /*
-     * Simple arrow shape:
-     *      0
-     *     / \
-     *    1---2
-     *      | |
-     *      4-3
-     */
+    // تصميم سهم "خطوط" (Khtot) احترافي
+    // يتكون من مثلث للرأس ومستطيل للجسم
     std::vector<Vertex> vertices = {
-            Vertex(Vector3{0, 0.5f, 0}, Vector2{0.5f, 0}),    // 0: tip
-            Vertex(Vector3{-0.4f, 0, 0}, Vector2{0, 0.5f}),   // 1: left wing
-            Vertex(Vector3{0.4f, 0, 0}, Vector2{1, 0.5f}),    // 2: right wing
-            Vertex(Vector3{0.2f, -0.5f, 0}, Vector2{0.7f, 1}), // 3: bottom right
-            Vertex(Vector3{-0.2f, -0.5f, 0}, Vector2{0.3f, 1}) // 4: bottom left
+            Vertex(Vector3{0.5f, 0, 0}, Vector2{0,0}),     // 0: قمة الرأس
+            Vertex(Vector3{0.1f, 0.3f, 0}, Vector2{0,0}),   // 1: زاوية الرأس علوية
+            Vertex(Vector3{0.1f, -0.3f, 0}, Vector2{0,0}),  // 2: زاوية الرأس سفلية
+            Vertex(Vector3{0.1f, 0.08f, 0}, Vector2{0,0}),  // 3: بداية الجسم علوي
+            Vertex(Vector3{-0.5f, 0.08f, 0}, Vector2{0,0}), // 4: نهاية الجسم علوي
+            Vertex(Vector3{-0.5f, -0.08f, 0}, Vector2{0,0}),// 5: نهاية الجسم سفلي
+            Vertex(Vector3{0.1f, -0.08f, 0}, Vector2{0,0})  // 6: بداية الجسم سفلي
     };
     std::vector<Index> indices = {
-            0, 1, 2, // head
-            1, 4, 3, // body 1
-            1, 3, 2  // body 2
+            0, 1, 2,     // مثلث الرأس
+            3, 4, 5,     // مستطيل الجسم (المثلث الأول)
+            3, 5, 6      // مستطيل الجسم (المثلث الثاني)
     };
 
-    auto assetManager = app_->activity->assetManager;
-    auto spTexture = TextureAsset::loadAsset(assetManager, "android_robot.png");
-
-    models_.emplace_back(vertices, indices, spTexture);
+    models_.emplace_back(vertices, indices, nullptr);
 }
 
 void Renderer::handleInput() {
@@ -233,12 +223,4 @@ void Renderer::handleInput() {
         }
     }
     android_app_clear_motion_events(inputBuffer);
-
-    for (auto i = 0; i < inputBuffer->keyEventsCount; i++) {
-        auto &keyEvent = inputBuffer->keyEvents[i];
-        if (keyEvent.keyCode == AKEYCODE_BACK && keyEvent.action == AKEY_EVENT_ACTION_UP) {
-            game_.reset();
-        }
-    }
-    android_app_clear_key_events(inputBuffer);
 }

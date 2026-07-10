@@ -28,6 +28,7 @@ public:
     void drawModel(const Model &model) const;
     void setProjectionMatrix(float *projectionMatrix) const;
     void setModelMatrix(float *modelMatrix) const;
+    GLuint getProgram() const { return program_; }
 
 private:
     static GLuint loadShader(GLenum shaderType, const std::string &shaderSource);
