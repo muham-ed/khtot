@@ -41,6 +41,7 @@ public:
      * Renders all the models in the renderer
      */
     void render();
+    Game& getGame() { return game_; }
 
 private:
     /*!

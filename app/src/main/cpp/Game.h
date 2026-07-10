@@ -2,23 +2,16 @@
 #define KHTOT_GAME_H
 
 #include <vector>
-#include <memory>
 
-enum class Direction {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT
-};
+enum class Direction { UP, DOWN, LEFT, RIGHT };
 
 struct Arrow {
-    int x;
-    int y;
+    int x, y;
     Direction dir;
     bool moving = false;
     bool gone = false;
-    float currentX;
-    float currentY;
+    float currentX, currentY;
+    bool isHinted = false;
 };
 
 class Game {
@@ -33,10 +26,11 @@ public:
     bool isLevelCleared() const;
     void nextLevel();
     int getLevel() const { return level_; }
+    void giveHint();
+    bool isGameOver() const { return remainingAttempts_ <= 0; }
 
 private:
-    int gridWidth_;
-    int gridHeight_;
+    int gridWidth_, gridHeight_;
     std::vector<Arrow> arrows_;
     int remainingAttempts_;
     int level_ = 1;
@@ -45,4 +39,4 @@ private:
     void generateLevel(int lvl);
 };
 
-#endif //KHTOT_GAME_H
+#endif

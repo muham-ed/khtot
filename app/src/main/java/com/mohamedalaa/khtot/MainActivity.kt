@@ -1,8 +1,10 @@
 package com.mohamedalaa.khtot
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
-import android.widget.Toast
+import android.widget.TextView
 import com.google.androidgamesdk.GameActivity
 
 class MainActivity : GameActivity() {
@@ -12,11 +14,29 @@ class MainActivity : GameActivity() {
         }
     }
 
+    private lateinit var levelTxt: TextView
+    private lateinit var attemptsTxt: TextView
+    private val handler = Handler(Looper.getMainLooper())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         
-        Toast.makeText(this, "اضغط على الأسهم لإخراجها من المتاهة!", Toast.LENGTH_LONG).show()
+        levelTxt = findViewById(R.id.levelText)
+        attemptsTxt = findViewById(R.id.attemptsText)
+        
+        // تحديث الواجهة بشكل دوري (Polling)
+        handler.post(object : Runnable {
+            override fun run() {
+                updateUI()
+                handler.postDelayed(this, 100)
+            }
+        })
+    }
+
+    private fun updateUI() {
+        // هذه القيم سيتم جلبها عبر JNI لاحقاً إذا أردت دقة أكبر
+        // حالياً سنبقيها بسيطة
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
